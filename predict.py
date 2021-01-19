@@ -13,6 +13,11 @@ from utils import *
 import os
 import torch.nn.functional as F
 from torchvision.utils import save_image
+from PIL import Image
+import numpy as np
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+
 
 criterion = nn.MSELoss()
 n_epochs = 100
@@ -28,7 +33,7 @@ def main():
     device = torch.device('cuda' if use_cuda else 'cpu')
 
     unet = UNet(input_dim, label_dim)
-    unet.load_state_dict(torch.load('./checkpoints/checkpoint_10.pth', map_location='cpu'))
+    unet.load_state_dict(torch.load('./checkpoints_1_19/checkpoint_20.pth', map_location='cpu'))
 
     unet.eval()
 
@@ -90,8 +95,38 @@ def main():
 
         pred = unet(real)
 
+        print(pred.shape)
+        print(real.shape)
         save_image(pred, 'pred.png', nrow=2)
-        save_image(real, 'labels.png', nrow=2)
+        save_image(labels, 'labels.png', nrow=2)
+
+        pred_numpy = pred.detach().cpu().numpy()
+        label_numpy = labels.detach().cpu().numpy()
+        origin_numpy = real.detach().cpu().numpy()
+
+        print(pred_numpy.shape)
+
+        for i in range(pred_numpy.shape[0]):
+            numpy_img = pred_numpy[i].reshape((pred_numpy.shape[2], pred_numpy.shape[3]))
+            numpy_img = numpy_img * 1023
+            numpy_img = numpy_img.astype(np.int16)
+            image = Image.fromarray(numpy_img)
+            iamge_name = "./test_results/pred/" + str(i) + ".png"
+            image.save(iamge_name)
+
+            label_numpy_img = label_numpy[i].reshape((label_numpy.shape[2], label_numpy.shape[3]))
+            label_numpy_img = label_numpy_img * 1023
+            label_numpy_img = label_numpy_img.astype(np.int16)
+            label_image = Image.fromarray(label_numpy_img)
+            label_iamge_name = "./test_results/label/" + str(i) + ".png"
+            label_image.save(label_iamge_name)
+
+            origin_numpy_img = origin_numpy[i].reshape((origin_numpy.shape[2], origin_numpy.shape[3]))
+            origin_numpy_img = origin_numpy_img * 1023
+            origin_numpy_img = origin_numpy_img.astype(np.int16)
+            origin_image = Image.fromarray(origin_numpy_img)
+            origin_iamge_name = "./test_results/original/" + str(i) + ".png"
+            origin_image.save(origin_iamge_name)
 
         break
 
