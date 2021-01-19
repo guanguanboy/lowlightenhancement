@@ -33,12 +33,21 @@ class SpectralDataSet(Dataset):
         label_item_path = os.path.join(self.label_path, label_name)
         label = Image.open(label_item_path)
 
+        #print('item:', item)
+        #print('img_item_path:', img_item_path)
+        #print('label_item_path:', label_item_path)
+
         #label = label/512
         if self.transform is not None: #如果transform不等于None,那么执行转换
             img = self.transform(img).float()
-            img = img / 512
+            img[img < 0] = 0
+            img[img > 1023] = 1023
+            img = img / 1023
+            
             label = self.transform(label).float()
-            label = label / 512
+            label[label < 0] = 0
+            label[label > 1023] = 1023
+            label = label / 1023
 
         return img, label
 
