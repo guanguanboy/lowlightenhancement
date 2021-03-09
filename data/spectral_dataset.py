@@ -3,6 +3,7 @@ from PIL import Image
 import os
 import torchvision
 import torchvision.transforms as transforms
+import numpy as np
 
 class SpectralDataSet(Dataset):
 
@@ -39,16 +40,24 @@ class SpectralDataSet(Dataset):
 
         #label = label/512
         if self.transform is not None: #如果transform不等于None,那么执行转换
-            img = self.transform(img).float()
-            img[img < 0] = 0
-            img[img > 1023] = 1023
-            img = img / 1023
+            label_ndarray = np.array(label)
+            print(label_ndarray.dtype)    
+            if label_ndarray.dtype == 'int32': 
             
-            label = self.transform(label).float()
-            label[label < 0] = 0
-            label[label > 1023] = 1023
-            label = label / 1023
+                img = self.transform(img).float()
+                img[img < 0] = 0
+                img[img > 1023] = 1023
+                img = img / 1023
+                
+                label = self.transform(label).float()
+                label[label < 0] = 0
+                label[label > 1023] = 1023
+                label = label / 1023
+            else:
 
+                img = self.transform(img)
+                label = self.transform(label)
+            
         return img, label
 
     def __len__(self):

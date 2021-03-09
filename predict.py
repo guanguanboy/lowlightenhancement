@@ -33,7 +33,7 @@ def main():
     device = torch.device('cuda' if use_cuda else 'cpu')
 
     unet = UNet(input_dim, label_dim)
-    unet.load_state_dict(torch.load('./checkpoints_1_19/checkpoint_20.pth', map_location='cpu'))
+    unet.load_state_dict(torch.load('./checkpoints_1_19/checkpoint_30.pth', map_location='cpu'))
 
     unet.eval()
 
@@ -85,6 +85,16 @@ def main():
         batch_size=batch_size,
         shuffle=False)
 
+    count = 0
+
+    mean_psnr = 0
+    mean_ssim = 0
+    total_psnr = 0
+    total_ssim = 0
+
+    goundtruth_total_pnsr = 0
+    goundtruth_total_ssim = 0
+
     for real, labels in tqdm(dataloader):
         #print('real.shape', real.shape)
         #print('labels.shape', labels.shape)
@@ -108,11 +118,12 @@ def main():
 
         for i in range(pred_numpy.shape[0]):
             numpy_img = pred_numpy[i].reshape((pred_numpy.shape[2], pred_numpy.shape[3]))
-            numpy_img = numpy_img * 1023
-            numpy_img = numpy_img.astype(np.int16)
-            image = Image.fromarray(numpy_img)
+            pred_numpy_img = numpy_img * 1023
+            pred_numpy_img = pred_numpy_img.astype(np.int16)
+            image = Image.fromarray(pred_numpy_img)
             iamge_name = "./test_results/pred/" + str(i) + ".png"
             image.save(iamge_name)
+            #pred_numpy_img_8bit = numpy_img * 255 
 
             label_numpy_img = label_numpy[i].reshape((label_numpy.shape[2], label_numpy.shape[3]))
             label_numpy_img = label_numpy_img * 1023
@@ -128,7 +139,28 @@ def main():
             origin_iamge_name = "./test_results/original/" + str(i) + ".png"
             origin_image.save(origin_iamge_name)
 
-        break
+            count += 1
+
+            total_psnr += caculate_psnr_16bit(pred_numpy_img, origin_numpy_img)
+            total_ssim += caculate_ssim_16bit(pred_numpy_img, label_numpy_img)
+
+            goundtruth_total_pnsr += caculate_psnr_16bit(label_numpy_img, origin_numpy_img)
+            goundtruth_total_ssim += caculate_ssim_16bit(label_numpy_img, pred_numpy_img)
+        
+        if(count == 4):
+            break
+
+    mean_psnr = total_psnr/count
+    mean_ssim = total_ssim/count
+    print("count = ", count)
+    print("mean_psnr = ", mean_psnr)
+    print("mean_ssim = ", mean_ssim)
+
+    gound_truth_mean_psnr = goundtruth_total_pnsr/count
+    gound_truth_mean_ssim = goundtruth_total_ssim/count
+
+    print("gound_truth_mean_psnr = ", gound_truth_mean_psnr)
+    print("gound_truth_mean_ssim = ", gound_truth_mean_ssim)
 
 if __name__=="__main__":
     main()

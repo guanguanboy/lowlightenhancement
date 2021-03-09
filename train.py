@@ -36,6 +36,7 @@ def train():
         batch_size=batch_size,
         shuffle=False)
     unet = UNet(input_dim, label_dim).to(device)
+    unet.init_weight()
     unet_opt = torch.optim.Adam(unet.parameters(), lr=lr)
     scheduler = lr_scheduler.StepLR(unet_opt, step_size, gamma=0.4)
     cur_step = 0

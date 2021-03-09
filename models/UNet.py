@@ -209,8 +209,17 @@ class UNet(nn.Module):
         #### END CODE HERE ####
         return xn
 
+    def init_weight(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
+                if m.bias is not None:
+                    m.bias.data.zero_()
+                if m.weight is not None:
+                    nn.init.xavier_uniform_(m.weight)
+
 
 test_unet = UNet(1, 1)
 assert tuple(test_unet(torch.randn(1, 1, 256, 256)).shape) == (1, 1, 256, 256)
 print(test_unet(torch.randn(1, 1, 256, 256)).shape)
+test_unet.init_weight()
 print("Success!")
